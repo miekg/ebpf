@@ -19,5 +19,5 @@ func main() {
 		HandlerFunc: SySEnterWriteHandle,
 	}
 
-	m.Handle()
+	m.Register()
 }

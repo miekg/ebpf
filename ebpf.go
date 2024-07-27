@@ -17,7 +17,7 @@ type Meta struct {
 	HandlerFunc
 }
 
-func (m Meta) Handle() int {
+func (m Meta) Register() int {
 	// do something, or nothing
 	return 0
 }
