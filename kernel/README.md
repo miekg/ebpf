@@ -5,6 +5,9 @@ and 'c', but we need 'go'
 
 `bpftool btf dump file /sys/kernel/btf/vmlinux format c` outputs a lot, for instance:
 
+The file `vmlinux` itself is in BTF format, which might be easier to parse, i.e. let bpftool output
+Go code. OTOH, it doesn't look to bad.
+
 ~~~
 [101] STRUCT 'file_system_type' size=72 vlen=17
         'name' type_id=5 bits_offset=0
@@ -64,3 +67,20 @@ type FileSystemType struct {
 
 I think I want native types as much as possible and only in the compile step make the size
 assumptions.
+
+## bpftool raw output
+
+~~~
+[101] STRUCT 'file_system_type' size=72 vlen=17
+        'name' type_id=5 bits_offset=0
+~~~
+
+so
+~~~
+[ID] TYPE 'name' key=value key1=value1 ...
+        'name' key2=value2 key3=value3
+~~~
+
+where some keys have more importance then others.
+
+https://mostlynerdless.de/blog/2024/07/02/hello-ebpf-bpf-type-format-and-13-thousand-generated-java-classes-11/
