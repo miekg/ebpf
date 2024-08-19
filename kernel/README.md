@@ -8,6 +8,10 @@ and 'c', but we need 'go'
 The file `vmlinux` itself is in BTF format, which might be easier to parse, i.e. let bpftool output
 Go code. OTOH, it doesn't look to bad.
 
+also does JSON:
+
+`bpftool btf dump -j file /sys/kernel/btf/vmlinux |jq`
+
 ~~~
 [101] STRUCT 'file_system_type' size=72 vlen=17
         'name' type_id=5 bits_offset=0
