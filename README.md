@@ -15,3 +15,9 @@ API should work; completely uncertain if this is going to work.
 
 
 How is this all different than writing a new compiler backend for the Go compiler?
+
+## TinyGo
+
+Maybe this should be a backend for tinygo, that still uses llvm to generate binary, but that may
+actually be a good thing, as llvm is the official(?) ebpf compiler. This [was even suggested a
+while](https://github.com/tinygo-org/tinygo/issues/1015) a go.
