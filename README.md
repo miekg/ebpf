@@ -1,6 +1,22 @@
-# ebpf in *pure* Go
+# eBPF in *pure* Go
 
 > eBPF in C? What am I, a farmer?
+
+The goal here is: have a normal Go environment with a bunch a packages that compiles into a elf
+binary that can be loaded into the kernel with `bpftool`.
+
+This Go program can _also_ be compiled to a native Go (elf) binary, i.e. with `go build`, but that
+problably doesn't do much.
+
+The benefit of this approach is that you can use _all_ the Go development tooling for writing a eBPF
+program.
+
+How this will actually look in practice is uncertain, ideally eBPF should be "just" a compiler
+backend for the Go compiler. Don't know how feasible that is, given the limitation of eBPF.
+
+
+== older stuff ==
+
 
 In examples/ I'm trying to convert C ebpf code to non-working Go code to get a feel on how to the Go
 API should work; completely uncertain if this is going to work.
