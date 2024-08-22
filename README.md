@@ -14,25 +14,49 @@ program.
 How this will actually look in practice is uncertain, ideally eBPF should be "just" a compiler
 backend for the Go compiler. Don't know how feasible that is, given the limitation of eBPF.
 
+## Hello World
 
-== older stuff ==
+An [eBPF hello
+world](https://github.com/eunomia-bpf/bpf-developer-tutorial/blob/main/src/1-helloworld/README_en.md#hello-world---minimal-ebpf-program),
+look like this:
 
+~~~ c
+/* SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause) */
+#define BPF_NO_GLOBAL_DATA
+#include <linux/bpf.h>
+#include <bpf/bpf_helpers.h>
+#include <bpf/bpf_tracing.h>
 
-In examples/ I'm trying to convert C ebpf code to non-working Go code to get a feel on how to the Go
-API should work; completely uncertain if this is going to work.
+typedef unsigned int u32;
+typedef int pid_t;
+const pid_t pid_filter = 0;
 
-## Requirements
+char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
-* Normal Go code, it should compile
-* Like working with any package in this case "ebpf"
-* Seperate "compiler" that compiles to ebpf ELF
-    - Look at avo?
-* libbpf is defacto standard, that manages the loading, unloading, etc?
-* compile ebpf helpers to assembly and use that? Just like the .S file from Go but
-    then for the ebpf VM?
+SEC("tp/syscalls/sys_enter_write")
+int handle_tp(void *ctx)
+{
+ pid_t pid = bpf_get_current_pid_tgid() >> 32;
+ if (pid_filter && pid != pid_filter)
+  return 0;
+ bpf_printk("BPF triggered sys_enter_write from PID %d.\n", pid);
+ return 0;
+}
+~~~
 
+Would become something like
 
-How is this all different than writing a new compiler backend for the Go compiler?
+~~~ go
+import "github.com/miekg/ebpf"
+
+func Syscalls_SysEnterWrite(ctx ebpf.Context) int {
+    pid := ebpf.GetCurrentPidTgid() >> 32
+    if pid != 0 {
+        epbf.Printk("BPF triggered sys_enter_write from PID %d.\n", pid)
+    }
+    return 0
+}
+~~~
 
 ## TinyGo
 
