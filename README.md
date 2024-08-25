@@ -63,3 +63,8 @@ func Syscalls_SysEnterWrite(ctx ebpf.Context) int {
 Maybe this should be a backend for tinygo, that still uses llvm to generate binary, but that may
 actually be a good thing, as llvm is the official(?) ebpf compiler. This [was even suggested a
 while](https://github.com/tinygo-org/tinygo/issues/1015) a go.
+
+## Stuff of interest
+
+* go-delve/delve@v1.22.1/pkg/proc/internal/ebpf/helpers.go
+* github.com:miekg/ebpfcat (forked)
