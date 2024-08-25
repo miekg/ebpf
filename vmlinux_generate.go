@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
 	"strings"
@@ -90,6 +91,7 @@ func main() {
 		}
 	}
 
+	final := new(bytes.Buffer)
 	for i, source := range pBpf.Sources {
 		if i == 0 {
 			fmt.Printf("package %s\n\n", pBpf.Package)
@@ -97,13 +99,19 @@ func main() {
 		}
 		switch source.Kind {
 		case "const":
-			fmt.Printf("const (\n")
-			fmt.Printf("%s", source.Text.Bytes())
-			fmt.Printf(")\n")
+			fmt.Fprintf(final, "const (\n")
+			fmt.Fprintf(final, "%s", source.Text.Bytes())
+			fmt.Fprintf(final, ")\n")
 
 		case "struct":
 		}
 	}
+
+	res, err := format.Source(final.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s", res)
 }
 
 // makeGoName takes a string like XXX_YYYY and converts it to Go's camelcase XxxYyyy. BPF_ is removed from the beginning
