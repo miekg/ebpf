@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,9 +12,7 @@ import (
 	"strings"
 )
 
-// Some values are so huge that they don't fit in a int, currently we skip them as they are mostly(?) bitmasks.
-type Val int
-
+// BTF is the JSON structure that we parse via bpftool.
 type BTF struct {
 	ID         int
 	TypeID     int `json:"type_id,omitempty"`
@@ -24,20 +23,39 @@ type BTF struct {
 	BitsOffset int    `json:"bits_offset"`
 	NrBits     int    `json:"nr_bits"`
 	NrElems    int    `json:"nr_elems"`
-	Encoding   string `json:",omitempty"`
-	Vlen       int    `json:",omitempty"` // Number of Members or Params
+	Encoding   string `json:",omitempty"` // FIXME: Not used yet.
+	Vlen       int    `json:",omitempty"` // Number of Members, Params or Values.
 	Val        Val    `json:",omitempty"`
 	Members    []BTF  `json:",omitempty"`
 	Params     []BTF  `json:",omitempty"`
 	Values     []BTF  `json:",omitempty"`
 }
 
-type Kind string
+// Package is the Go code we output. This is mostly variable definitions.
+type Package struct {
+	Package string // Package controls the package name.
+	Sources []Source
+}
+
+// Source is the actual (printable) Go code.
+type Source struct {
+	Kind string        // How to place the code in the package.
+	Text *bytes.Buffer // Source is the directly printable Go code
+}
 
 const (
 	EnumKind   = "ENUM"
 	StructKind = "STRUCT"
 )
+
+// KindToType maps the C Kinds to Go language constructs.
+var KindToType = map[string]string{
+	EnumKind:   "const",
+	StructKind: "struct",
+}
+
+// Some values are so huge that they don't fit in a int, currently we skip them as they are mostly(?) bitmasks.
+type Val int
 
 func (v *Val) UnmarshalJSON(b []byte) error {
 	var i int
@@ -60,18 +78,36 @@ func main() {
 		log.Fatal(err)
 	}
 
+	pBpf := Package{Package: "bpf"}
+
 	for _, k := range linux["types"] {
 		if k.Kind == EnumKind && k.Name == "bpf_map_type" {
-			fmt.Printf("const (\n")
+			source := Source{Kind: KindToType[EnumKind], Text: new(bytes.Buffer)}
 			for _, v := range k.Values {
-				fmt.Printf("  %s = %d\n", makeGoName(v.Name), v.Val)
+				fmt.Fprintf(source.Text, "%s = %d\n", makeGoName(v.Name), v.Val)
 			}
-			fmt.Printf(")\n")
+			pBpf.Sources = append(pBpf.Sources, source)
 		}
 	}
 
+	for i, source := range pBpf.Sources {
+		if i == 0 {
+			fmt.Printf("package %s\n\n", pBpf.Package)
+
+		}
+		switch source.Kind {
+		case "const":
+			fmt.Printf("const (\n")
+			fmt.Printf("%s", source.Text.Bytes())
+			fmt.Printf(")\n")
+
+		case "struct":
+		}
+	}
 }
 
+// makeGoName takes a string like XXX_YYYY and converts it to Go's camelcase XxxYyyy. BPF_ is removed from the beginning
+// of the string, as those indentifiers are put in bpf package.
 func makeGoName(c string) string {
 	fields := strings.SplitAfter(strings.ToLower(c), "_")
 	start := 0
