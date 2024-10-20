@@ -75,3 +75,4 @@ while](https://github.com/tinygo-org/tinygo/issues/1015) a go.
 - https://qmonnet.github.io/whirl-offload/2020/04/12/llvm-ebpf-asm/
 - https://pkg.go.dev/golang.org/x/tools/cmd/ssadump
 - https://go.googlesource.com/tools/+/master/go/ssa/example_test.go
+- https://benhoyt.com/writings/mugo/
