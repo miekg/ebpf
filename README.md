@@ -69,3 +69,9 @@ while](https://github.com/tinygo-org/tinygo/issues/1015) a go.
 * go-delve/delve@v1.22.1/pkg/proc/internal/ebpf/helpers.go
 * github.com:miekg/ebpfcat (forked)
 * https://github.com/DQNEO/babygo
+
+## Reading list
+
+- https://qmonnet.github.io/whirl-offload/2020/04/12/llvm-ebpf-asm/
+- https://pkg.go.dev/golang.org/x/tools/cmd/ssadump
+- https://go.googlesource.com/tools/+/master/go/ssa/example_test.go
