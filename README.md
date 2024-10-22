@@ -2,67 +2,70 @@
 
 > eBPF in C? What am I, a farmer?
 
-The goal here is: have a normal Go environment with a bunch a packages that compiles into a elf
-binary that can be loaded into the kernel with `bpftool`.
-
-This Go program can _also_ be compiled to a native Go (elf) binary, i.e. with `go build`, but that
-problably doesn't do much.
+The eBPF ecosystem heavily depends on clang/llvm to compile (C) source code into object code that
+can be loaded by the kernel. The goal here is to get rid of clang/llvm and use pure Go.
 
 The benefit of this approach is that you can use _all_ the Go development tooling for writing a eBPF
-program.
+program. Cilium has been doing _a lot_ of work in this space.
 
-How this will actually look in practice is uncertain, ideally eBPF should be "just" a compiler
-backend for the Go compiler. Don't know how feasible that is, given the limitation of eBPF.
+When using eBPF you can also take with it via FDs, this means the non-eBPF bit of your code also
+lives somewhere. Taking this all into account I've finally settled on the following approach.
 
-## Hello World
+Using Cilium' asm package you can already do things like this:
 
-An [eBPF hello
-world](https://github.com/eunomia-bpf/bpf-developer-tutorial/blob/main/src/1-helloworld/README_en.md#hello-world---minimal-ebpf-program),
-look like this:
+~~~ go
+// Minimal program that writes the static value '123' to the perf ring on
+// each event. Note that this program refers to the file descriptor of
+// the perf event array created above, which needs to be created prior to the
+// program being verified by and inserted into the kernel.
+progSpec.Instructions = asm.Instructions{
+	// store the integer 123 at FP[-8]
+	asm.Mov.Imm(asm.R2, 123),
+	asm.StoreMem(asm.RFP, -8, asm.R2, asm.Word),
+
+	// load registers with arguments for call of FnPerfEventOutput
+	asm.LoadMapPtr(asm.R2, events.FD()), // file descriptor of the perf event array
+	asm.LoadImm(asm.R3, 0xffffffff, asm.DWord),
+	asm.Mov.Reg(asm.R4, asm.RFP),
+	asm.Add.Imm(asm.R4, -8),
+	asm.Mov.Imm(asm.R5, 4),
+
+	// call FnPerfEventOutput, an eBPF kernel helper
+	asm.FnPerfEventOutput.Call(),
+
+	// set exit code to 0
+	asm.Mov.Imm(asm.R0, 0),
+	asm.Return(),
+}
+~~~
+
+which is eBPF assembly with Go functions and types. What if we can generate the above from Go code
+using Go code. This is essentially a eBPF assembly in Go and then piggybacking on all the Cilium
+stuff.
+
+Thus, this C code:
 
 ~~~ c
-/* SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause) */
-#define BPF_NO_GLOBAL_DATA
 #include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
-#include <bpf/bpf_tracing.h>
-
-typedef unsigned int u32;
-typedef int pid_t;
-const pid_t pid_filter = 0;
 
 char LICENSE[] SEC("license") = "Dual BSD/GPL";
 
 SEC("tp/syscalls/sys_enter_write")
 int handle_tp(void *ctx)
 {
- pid_t pid = bpf_get_current_pid_tgid() >> 32;
- if (pid_filter && pid != pid_filter)
-  return 0;
- bpf_printk("BPF triggered sys_enter_write from PID %d.\n", pid);
- return 0;
+        int pid = bpf_get_current_pid_tgid() >> 32;
+        bpf_printk("PID %d.\n", pid);
+        return 0;
 }
 ~~~
 
-Would become something like
+will become:
 
-~~~ go
-import "github.com/miekg/ebpf"
+## TODO
 
-func Syscalls_SysEnterWrite(ctx ebpf.Context) int {
-    pid := ebpf.GetCurrentPidTgid() >> 32
-    if pid != 0 {
-        epbf.Printk("BPF triggered sys_enter_write from PID %d.\n", pid)
-    }
-    return 0
-}
-~~~
-
-## TinyGo
-
-Maybe this should be a backend for tinygo, that still uses llvm to generate binary, but that may
-actually be a good thing, as llvm is the official(?) ebpf compiler. This [was even suggested a
-while](https://github.com/tinygo-org/tinygo/issues/1015) a go.
+- constants on the stack
+- generate complete program, looks like a lot of boiler plate
 
 ## Stuff of interest
 
