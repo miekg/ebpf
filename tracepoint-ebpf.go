@@ -1,7 +1,10 @@
-// +go:build ignore
-package main
+package gobpf
 
-func bpf() {
+// Needs: internal/sys from bpf-go
+// gopbf.BPF_F_INDEX_MASK
+
+func BPF() {
 	// context
-	bpf.PerfEventOutput(bpf.Context, events.FD(), 0xffffffff /*flags*/, 123 /* value */, 4 /* size*/)
+	// gobpf.PerfEventOutput(bpf.Context, events.FD(), bpf.BPF_F_INDEX_MASK, 123 /* value */, 4 /* size*/)
+	gobpf.PerfEventOutput(bpf.Context, events.FD(), gobpf.BPF_F_INDEX_MASK, 123)
 }

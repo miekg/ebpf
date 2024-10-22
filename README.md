@@ -43,24 +43,17 @@ which is eBPF assembly with Go functions and types. What if we can generate the 
 using Go code. This is essentially a eBPF assembly in Go and then piggybacking on all the Cilium
 stuff.
 
-Thus, this C code:
+Thus the above assembly _should_ be generated from the following Go code:
 
-~~~ c
-#include <linux/bpf.h>
-#include <bpf/bpf_helpers.h>
-
-char LICENSE[] SEC("license") = "Dual BSD/GPL";
-
-SEC("tp/syscalls/sys_enter_write")
-int handle_tp(void *ctx)
-{
-        int pid = bpf_get_current_pid_tgid() >> 32;
-        bpf_printk("PID %d.\n", pid);
-        return 0;
-}
+~~~ go
+func BPF() {
+    gobpf.PerfEventOutput(bpf.Context, events.FD(), gobpf.BPF_F_INDEX_MASK, 123)
+  }
 ~~~
 
-will become:
+Where `gobpf` is _this_ library and `bpf` is cilium's. As you can see `event.FD()` is undeclared, so
+it might make sense to generate the whole program via some bpf comment tags or some other mechanism.
+
 
 ## TODO
 
