@@ -8,10 +8,11 @@ can be loaded by the kernel. The goal here is to get rid of clang/llvm and use p
 The benefit of this approach is that you can use _all_ the Go development tooling for writing a eBPF
 program. Cilium has been doing _a lot_ of work in this space.
 
-When using eBPF you can also take with it via FDs, this means the non-eBPF bit of your code also
-lives somewhere. Taking this all into account I've finally settled on the following approach.
+When using eBPF you can also talk with it via FDs and eBPF maps, this means the non-eBPF bit of your
+code also lives somewhere. Taking this all into account I've finally settled on the following
+approach.
 
-Using Cilium' asm package you can already do things like this:
+Using Cilium' asm package you can already do things like this ([example from](https://)).
 
 ~~~ go
 // Minimal program that writes the static value '123' to the perf ring on
@@ -39,9 +40,10 @@ progSpec.Instructions = asm.Instructions{
 }
 ~~~
 
-which is eBPF assembly with Go functions and types. What if we can generate the above from Go code
-using Go code. This is essentially a eBPF assembly in Go and then piggybacking on all the Cilium
-stuff.
+Which is eBPF assembly with Go functions and types - meaning Ciliun already made a assembler.
+
+What if we can generate the above from Go code using Go code. This is essentially a eBPF assembly in
+Go and then piggybacking on all the Cilium stuff.
 
 Thus the above assembly _should_ be generated from the following Go code:
 
@@ -52,8 +54,7 @@ func BPF() {
 ~~~
 
 Where `gobpf` is _this_ library and `bpf` is cilium's. As you can see `event.FD()` is undeclared, so
-it might make sense to generate the whole program via some bpf comment tags or some other mechanism.
-
+it might make sense to generate the whole program via some `bpf` comment tags or some other mechanism.
 
 ## TODO
 
