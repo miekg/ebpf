@@ -40,7 +40,7 @@ progSpec.Instructions = asm.Instructions{
 }
 ~~~
 
-Which is eBPF assembly with Go functions and types - meaning Ciliun already made a assembler.
+Which is eBPF assembly with Go functions and types - meaning Cilium already made a assembler.
 
 What if we can generate the above from Go code using Go code. This is essentially a eBPF assembly in
 Go and then piggybacking on all the Cilium stuff.
